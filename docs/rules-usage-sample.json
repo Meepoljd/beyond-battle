@@ -1,0 +1,10 @@
+{
+  "mode": "rules",
+  "model_requests": 0,
+  "model_cost": 0,
+  "sample": "5 matches / seed 42 / this cloud CPU only",
+  "turns": 35,
+  "median_turn_ms": 4.74,
+  "max_turn_ms": 6.23,
+  "database_bytes_after_5_matches": 2539520
+}

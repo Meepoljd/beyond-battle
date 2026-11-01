@@ -1,0 +1,2 @@
+{"viewport": [390, 844], "result": "PASS", "flows": ["prepare", "order", "lost-response retry", "offline retry", "whole-match win", "replay", "memory review", "second match", "refresh", "abort", "no horizontal overflow", "no XSS or JS/CSP errors"]}
+{"viewport": [1440, 1000], "result": "PASS", "flows": ["prepare", "order", "lost-response retry", "offline retry", "whole-match win", "replay", "memory review", "second match", "refresh", "abort", "no horizontal overflow", "no XSS or JS/CSP errors"]}

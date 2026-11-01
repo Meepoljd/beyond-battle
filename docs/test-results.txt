@@ -1,0 +1,39 @@
+/tmp/beyond-battle-clean-venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+test_atomic_commit_failure_rolls_back_events_and_state (test_core.ApiTests.test_atomic_commit_failure_rolls_back_events_and_state) ... ok
+test_backup_restore_and_overwrite_protection (test_core.ApiTests.test_backup_restore_and_overwrite_protection) ... ok
+test_concurrent_same_and_distinct_keys (test_core.ApiTests.test_concurrent_same_and_distinct_keys) ... ok
+test_duplicate_create_and_advance_no_double_turn (test_core.ApiTests.test_duplicate_create_and_advance_no_double_turn) ... ok
+test_event_replay_matches_state_and_detects_tampering (test_core.ApiTests.test_event_replay_matches_state_and_detects_tampering) ... ok
+test_hard_process_exit_during_commit_rolls_back_and_recovers (test_core.ApiTests.test_hard_process_exit_during_commit_rolls_back_and_recovers) ... ok
+test_health_schema_and_contract_validation (test_core.ApiTests.test_health_schema_and_contract_validation) ... ok
+test_memory_cannot_use_unsent_order_or_fake_source (test_core.ApiTests.test_memory_cannot_use_unsent_order_or_fake_source) ... ok
+test_memory_review_source_dedup_disable_and_no_long_term_casualties (test_core.ApiTests.test_memory_review_source_dedup_disable_and_no_long_term_casualties) ... ok
+test_no_truth_endpoint_before_finished (test_core.ApiTests.test_no_truth_endpoint_before_finished) ... ok
+test_order_text_injection_is_data_and_unknown_units_rejected (test_core.ApiTests.test_order_text_injection_is_data_and_unknown_units_rejected) ... ok
+test_origin_guard_and_error_request_id (test_core.ApiTests.test_origin_guard_and_error_request_id) ... ok
+test_recovery_after_commit_preserves_saved_job (test_core.ApiTests.test_recovery_after_commit_preserves_saved_job) ... ok
+test_recovery_before_commit_retains_last_state_no_catchup (test_core.ApiTests.test_recovery_before_commit_retains_last_state_no_catchup) ... ok
+test_unknown_schema_refused_without_modifying_it (test_core.ApiTests.test_unknown_schema_refused_without_modifying_it) ... ok
+test_all_actions_are_validated_and_finite (test_core.KernelTests.test_all_actions_are_validated_and_finite) ... ok
+test_blackout_preserves_reports_and_autonomy_then_delivers_history (test_core.KernelTests.test_blackout_preserves_reports_and_autonomy_then_delivers_history) ... ok
+test_delivery_idempotent_and_old_report_never_overwrites_new (test_core.KernelTests.test_delivery_idempotent_and_old_report_never_overwrites_new) ... ok
+test_direct_order_cost_is_delayed_supervisor_sync (test_core.KernelTests.test_direct_order_cost_is_delayed_supervisor_sync) ... ok
+test_golden_fixture (test_core.KernelTests.test_golden_fixture) ... ok
+test_max_tick_and_all_disabled_endings (test_core.KernelTests.test_max_tick_and_all_disabled_endings) ... ok
+test_memory_changes_communication_without_stat_bonus (test_core.KernelTests.test_memory_changes_communication_without_stat_bonus) ... ok
+test_order_only_acts_after_arrival_and_expires_in_blackout (test_core.KernelTests.test_order_only_acts_after_arrival_and_expires_in_blackout) ... ok
+test_partial_oversized_and_forged_memory_decisions_fallback (test_core.KernelTests.test_partial_oversized_and_forged_memory_decisions_fallback) ... ok
+test_player_projection_never_includes_undelivered_or_hidden_state (test_core.KernelTests.test_player_projection_never_includes_undelivered_or_hidden_state) ... ok
+test_priority_and_replacement_arrival (test_core.KernelTests.test_priority_and_replacement_arrival) ... ok
+test_provider_mutation_or_invalid_target_cannot_change_truth (test_core.KernelTests.test_provider_mutation_or_invalid_target_cannot_change_truth) ... ok
+test_same_seed_and_recorded_decisions_reproduce_all_events (test_core.KernelTests.test_same_seed_and_recorded_decisions_reproduce_all_events) ... ok
+test_silence_blocks_reports_but_not_decisions (test_core.KernelTests.test_silence_blocks_reports_but_not_decisions) ... ok
+test_simultaneous_damage_does_not_depend_on_unit_dict_order (test_core.KernelTests.test_simultaneous_damage_does_not_depend_on_unit_dict_order) ... ok
+test_superseded_in_transit_order_cannot_revive (test_core.KernelTests.test_superseded_in_transit_order_cannot_revive) ... ok
+test_support_order_changes_default_loss_to_win (test_core.KernelTests.test_support_order_changes_default_loss_to_win) ... ok
+
+----------------------------------------------------------------------
+Ran 32 tests in 0.739s
+
+OK

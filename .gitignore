@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+data/*
+!data/.gitkeep
+*.sqlite3*
+.env
+.env.*
+!.env.example
+venv/
+.pytest_cache/
+*.db
+*.db-wal
+*.db-shm
+dist/

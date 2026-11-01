@@ -1,0 +1,21 @@
+{
+  "id": "bridge_v1", "version": "1.0.0", "ruleset_version": "rules-1.0.0",
+  "title": "雾河 · 守桥演习", "max_ticks": 16, "minutes_per_tick": 5,
+  "bridge": "bridge", "retreat_zone": "reserve", "enemy_goal": "south",
+  "bridge_loss_ticks": 2, "initial_personnel": 15, "initial_ammo": 18,
+  "communication": {"base_delay": 1, "delayed_ticks": [9, 10], "extra_delay": 2, "blackout_ticks": [4, 5, 6], "report_ttl": 3},
+  "zones": [
+    {"id": "north", "name": "北岸入口", "x": 50, "y": 10, "cover": 0, "capacity": 4, "adjacent": ["forest", "ridge"]},
+    {"id": "forest", "name": "西侧树林", "x": 22, "y": 32, "cover": 2, "capacity": 3, "adjacent": ["north", "bridge"]},
+    {"id": "ridge", "name": "东侧高地", "x": 78, "y": 32, "cover": 1, "capacity": 3, "adjacent": ["north", "bridge"]},
+    {"id": "bridge", "name": "雾河桥", "x": 50, "y": 53, "cover": 1, "capacity": 4, "adjacent": ["forest", "ridge", "south"]},
+    {"id": "south", "name": "南岸阵地", "x": 50, "y": 76, "cover": 2, "capacity": 4, "adjacent": ["bridge", "reserve"]},
+    {"id": "reserve", "name": "集结区", "x": 22, "y": 92, "cover": 2, "capacity": 5, "adjacent": ["south"]}
+  ],
+  "commanders": [
+    {"id": "lin", "name": "林岚", "role": "守备指挥官", "trait": "谨慎，损失后倾向保全；习惯先报告再撤退。", "retreat_threshold": 9, "unit_id": "blue-1", "zone": "bridge"},
+    {"id": "zhou", "name": "周野", "role": "侦察指挥官", "trait": "主动，优先观察接近路线；敌情估计偏乐观。", "retreat_threshold": 5, "unit_id": "blue-2", "zone": "forest"},
+    {"id": "chen", "name": "陈砚", "role": "预备队指挥官", "trait": "稳健，弹药吃紧时优先休整；擅长清晰汇报。", "retreat_threshold": 7, "unit_id": "blue-3", "zone": "south"}
+  ],
+  "enemies": [{"id": "red-1", "zone": "north", "personnel": 20, "route": "forest"}, {"id": "red-2", "zone": "north", "personnel": 18, "route": "ridge"}]
+}

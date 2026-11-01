@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#192f29">
+  <title>战报之外 · 守桥演习</title>
+  <link rel="stylesheet" href="/assets/style.css"><script defer src="/assets/app.js"></script>
+</head>
+<body>
+<header class="masthead"><a href="/" class="brand">战报之外<span>BEYOND THE BATTLE</span></a><span class="mode">规则模拟 · 离线演习</span></header>
+<main>
+  <div id="notice" role="status" aria-live="polite" hidden></div>
+  <section id="prepare">
+    <div class="intro"><p class="eyebrow">FIELD EXERCISE / 001</p><h1>守住一座桥。<br>学会相信你的下属。</h1><p class="lede">你看到的是他们送达的战报。<br>他们面对的，是战报之外的战场。</p><div class="brief"><span>3 名熟悉的指挥官</span><span>16 回合 · 约 80 分钟战场时间</span><span>手动推进 · 自动存档</span></div></div>
+    <div class="preparation"><div class="section-title"><h2>出发前，认识你的队伍</h2><span>01 / 演习准备</span></div><div id="roster" class="roster"></div>
+      <form id="create-form" class="setup"><label>演习种子 <input id="seed" type="number" value="42" min="0" max="2147483647" required></label><label class="check"><input id="use-memories" type="checkbox" checked>沿用已确认的演习经历</label><button id="create" class="primary" type="submit">进入守桥演习 <span>→</span></button></form>
+      <p class="fine">本版由确定性规则驱动，不调用大模型、不产生 API 费用。演习伤亡不带入下一局。</p>
+      <details class="instructions"><summary>第一次演习？一分钟了解规则</summary><ol><li>选择指挥官，为其下达任务；命令只有送达后才执行。</li><li>每次点击推进 5 分钟。下属会依收到的任务自主行动。</li><li>战场时间 20–30 分钟有固定通信中断，旧情报会继续显示时间戳。</li><li>守住雾河桥直到第 16 回合；敌军独占桥梁 2 回合即失守。</li><li>结束后查看事实与战报，确认要带入下一局的经历。</li></ol></details>
+    </div>
+  </section>
+  <section id="game" hidden>
+    <div class="game-title"><div><p class="eyebrow">FOG RIVER / 雾河</p><h1>守桥演习</h1></div><div class="tick-box"><strong id="tick">00</strong><span id="clock"></span></div></div>
+    <div class="status-strip"><span id="radio"></span><span id="progress"></span><span>已自动保存 · 关闭页面不推进</span></div>
+    <div id="outcome" class="outcome" hidden></div>
+    <div class="command-layout">
+      <section class="map-panel panel"><div class="section-title"><h2>战场示意</h2><span>仅显示已送达情报</span></div><svg id="map" viewBox="0 0 460 440" role="img" aria-label="雾河区域图：显示己方最后已知位置和有时间戳的敌情估计"></svg><div class="legend"><span>● 己方最后已知位置</span><span class="enemy">△ 敌情估计</span></div><p class="fine">地图上的位置可能过时。各卡片标有观察时间；没有标记不代表安全。</p><div id="units" class="unit-list"></div></section>
+      <section class="reports-panel panel"><div class="section-title"><h2>抵达总部的战报</h2><span id="report-count"></span></div><div id="reports" class="reports" aria-live="polite"></div></section>
+      <section id="orders-panel" class="panel orders-panel"><div class="section-title"><h2>下达任务</h2><span>允许越级指挥</span></div>
+        <form id="order-form"><div class="form-grid"><label>下属单位<select id="unit" required></select></label><label>行动<select id="action"><option value="HOLD">固守 · 原地防御</option><option value="MOVE">机动 · 前往区域</option><option value="OBSERVE">观察 · 原地侦察</option><option value="ATTACK">攻击 · 向目标推进</option><option value="SUPPORT">支援 · 向目标推进并掩护</option><option value="WITHDRAW">撤退 · 前往集结点</option><option value="REST">休整 · 不补充弹药</option></select></label><label>目标区域<select id="target"></select></label><label>优先级<select id="priority"><option value="1">常规</option><option value="2">紧急</option><option value="3">最高</option><option value="0">低</option></select></label><label>有效至回合<input id="expiry" type="number" min="1" max="16" value="16" required></label><label>兵力保全阈值<input id="threshold" type="number" min="0" max="15" value="7" required></label><label>替换旧命令<select id="supersedes"><option value="">不替换（按优先级选择）</option></select></label><label>无线电静默至回合<input id="silent" type="number" min="0" max="16" value="0" required></label></div>
+          <label>任务意图（备注）<textarea id="order-text" maxlength="600" rows="2" placeholder="例如：守住桥头，撤退前报告兵力与弹药。"></textarea></label><p class="fine">规则版执行上面的结构化选项；自由文字作为备注保留，不会被解释成行动。</p>
+          <label class="check"><input type="checkbox" id="autonomy" checked>授权按保全阈值自主撤退</label><label class="check"><input type="checkbox" id="report-before" checked>撤退时先报告兵力与弹药（可形成沟通记忆）</label><label class="check"><input type="checkbox" id="direct">越级直接下达（上级稍后收到同步）</label><button id="send-order" class="secondary" type="submit">发送任务</button>
+        </form><div id="order-history"></div>
+      </section>
+    </div>
+    <div class="turnbar"><button id="end" class="quiet">中止演习</button><span id="turn-hint">先下令，或让下属自主行动</span><button id="advance" class="primary">推进一回合 <span>+5 分钟 →</span></button><button id="show-review" class="primary" hidden>打开战后复盘 →</button></div>
+  </section>
+  <section id="review" hidden><p class="eyebrow">AFTER ACTION / 战后复盘</p><h1>同一场战斗，<br>不同的信息。</h1><p id="review-outcome" class="lede"></p><div id="replay-proof" class="proof"></div>
+    <label class="timeline-control">对照回合 <output id="review-tick"></output><input id="timeline" type="range" min="0" max="16" value="0"></label>
+    <div class="replay-grid"><section class="panel"><h2>当时真正发生的事</h2><p class="fine">演习已经结束，此处开放客观记录。</p><div id="facts"></div></section><section class="panel"><h2>当时总部知道的事</h2><p class="fine">仅包含该回合及之前已送达的战报。</p><div id="then-reports"></div></section></div>
+    <section class="panel memory-panel"><h2>带走经历，不带走伤亡</h2><p>以下经历只来自各角色实际收到的命令。它们影响沟通格式，不增加战斗数值。</p><div id="memory-candidates"></div><button id="save-memories" class="secondary">确认所选经历</button><p id="memory-result" role="status"></p></section>
+    <div class="review-actions"><button id="back-game" class="quiet">返回指挥台</button><button id="new-match" class="primary">准备下一场演习 →</button></div>
+  </section>
+</main>
+<dialog id="commander-dialog"><button id="close-dialog" class="quiet">关闭 ×</button><div id="commander-detail"></div></dialog>
+<footer>战报之外 <span>DEMO 0.1 · RULES EDITION</span></footer>
+</body></html>
