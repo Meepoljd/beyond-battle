@@ -27,6 +27,12 @@ databases. Read README.md and docs/DEVELOPMENT_PLAN.md before changing gameplay.
 
 ## Invariants
 
+These invariants govern the current rules-based exercise implementation. See
+docs/design/GAME_VISION.md and docs/design/SOURCES.md for the broader design and
+its evidence levels. Exercise-only limits such as no permanent casualties do not
+erase the historical long-term campaign proposals; archiving those proposals
+does not authorize implementing them or changing existing save behavior.
+
 - Only the simulator changes battlefield truth. Agent providers receive limited
   observations and submit validated proposals, never arbitrary tools or code.
 - Player APIs expose delivered reports and acknowledgements only. Full truth is

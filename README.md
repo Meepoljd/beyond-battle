@@ -4,6 +4,8 @@
 
 私有仓库：`Meepoljd/beyond-battle`。后续云端开发的准备脚本与配置见 [Codex Cloud 开发环境](docs/CODEX_CLOUD.md)，编码任务约定见 [AGENTS.md](AGENTS.md)。
 
+完整游戏方向见 [设计愿景归档](docs/design/GAME_VISION.md)，原话、历史方案及证据层级见 [来源索引](docs/design/SOURCES.md)。本文以下内容仍描述当前守桥 Demo；它的演习损失、规模和回合限制不等于长期游戏的永久限制。
+
 ## 启动（Python 3.12）
 
 ```bash

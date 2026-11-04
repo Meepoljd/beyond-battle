@@ -2,6 +2,8 @@
 
 本文件是已实现规则版的维护计划。原始 2026-10-31 实施计划的完整阅读与来源记录见 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md)。原计划 Library ID 为 `libfile_445013c9c2948191b7af7149d2709417`；此文件不冒充其原始字节副本。
 
+完整产品愿景、演进与待决事项另见 [design/GAME_VISION.md](design/GAME_VISION.md)，证据见 [design/SOURCES.md](design/SOURCES.md)。以下已交付基线、后续顺序与验收约束面向当前规则演习；不要将其“无永久损失”等约束推广成整个长期游戏的定案。愿景归档不自动扩大本轮实现或部署范围。
+
 ## 已交付基线
 
 - P0：独立 Python API、SQLite、移动网页、锁定依赖、OpenAPI。
