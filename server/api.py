@@ -10,6 +10,8 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from .domain import ROOT, SCENARIO, player_view
 from .storage import Store, DomainError
+from .opencode import OpenCodeSettings
+from .turns import TurnRunner
 
 
 class Strict(BaseModel):
@@ -20,7 +22,7 @@ class CreateMatch(Strict):
     scenario_id: Literal['bridge_v1'] = 'bridge_v1'
     commander_ids: list[str] = Field(default_factory=lambda: ['lin', 'zhou', 'chen'], min_length=1, max_length=3)
     seed: int = Field(default=42, ge=0, le=2147483647)
-    provider_mode: Literal['rules'] = 'rules'
+    provider_mode: Literal['rules', 'opencode'] = 'rules'
     use_memories: bool = True
 
     @model_validator(mode='after')
@@ -60,15 +62,20 @@ class MemoryState(Strict):
 Key = Annotated[str, Header(alias='Idempotency-Key', min_length=8, max_length=100)]
 
 
-def create_app(db_path=None):
-    store = Store(db_path or os.environ.get('BATTLE_DB', ROOT / 'data/battle.sqlite3'))
+def create_app(db_path=None, opencode_settings=None):
+    settings = opencode_settings if opencode_settings is not None else OpenCodeSettings.from_env()
+    store = Store(db_path or os.environ.get('BATTLE_DB', ROOT / 'data/battle.sqlite3'), settings)
+    runner = TurnRunner(store)
 
     @asynccontextmanager
     async def lifespan(app):
         store.recover()
-        yield
+        try:
+            yield
+        finally:
+            runner.close()
 
-    app = FastAPI(title='战报之外 · 规则演习 API', version='0.1.0', lifespan=lifespan)
+    app = FastAPI(title='战报之外 · 演习 API', version='0.2.0', lifespan=lifespan)
     app.state.store = store
 
     @app.middleware('http')
@@ -109,6 +116,13 @@ def create_app(db_path=None):
     def commanders():
         return store.commanders()
 
+    @app.get('/api/providers')
+    def providers():
+        return {'rules': {'available': True}, 'opencode': {
+            'available': settings.enabled,
+            'model': settings.model if settings.enabled else None,
+            'max_calls': settings.max_calls if settings.enabled else 0}}
+
     @app.post('/api/matches', status_code=201)
     def create(body: CreateMatch, key: Key):
         return store.create(body.model_dump(), key)
@@ -116,7 +130,11 @@ def create_app(db_path=None):
     @app.get('/api/matches/{mid}')
     def view(mid: str):
         s, v = store.get(mid)
-        return player_view(s, mid, v)
+        result = player_view(s, mid, v)
+        if result['provider_mode'] == 'opencode':
+            result['provider_calls_reserved'] = store.provider_usage(mid)
+            result['provider_call_limit'] = s['provider_config']['max_calls']
+        return result
 
     @app.post('/api/matches/{mid}/orders', status_code=201)
     def order(mid: str, body: Order, key: Key):
@@ -124,6 +142,9 @@ def create_app(db_path=None):
 
     @app.post('/api/matches/{mid}/advance', status_code=202)
     def advance(mid: str, body: Version, key: Key):
+        state, _ = store.get(mid)
+        if state.get('provider_config', {}).get('mode') == 'opencode':
+            return runner.submit(mid, body.model_dump(), key)
         return store.advance(mid, body.model_dump(), key)
 
     @app.get('/api/jobs/{jid}')

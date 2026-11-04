@@ -18,7 +18,8 @@ def verify_simulation(events):
             state = target
         elif target['tick'] > state['tick']:
             recorded = {d['agent_id']:d['proposal'] for d in target['last_decisions']}
-            state, reproduced, _ = advance(state, recorded_decisions=recorded)
+            records = {d['agent_id']: d for d in target['last_decisions']}
+            state, reproduced, _ = advance(state, recorded_decisions=recorded, recorded_records=records)
             if reproduced != pending:
                 raise ValueError('REPLAY_EVENT_MISMATCH')
         elif pending and pending[0]['type'] == 'ORDER_SUBMITTED':
