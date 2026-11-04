@@ -2,6 +2,8 @@
 
 一个可以完整游玩的单人规则版：选择指挥官、下令、手动推进、接收延迟战报、战后对照事实，再审阅并保留沟通经历。当前 **没有调用大模型**，也没有接入 NUC、公网或其他项目服务。
 
+私有仓库：`Meepoljd/beyond-battle`。后续云端开发的准备脚本与配置见 [Codex Cloud 开发环境](docs/CODEX_CLOUD.md)，编码任务约定见 [AGENTS.md](AGENTS.md)。
+
 ## 启动（Python 3.12）
 
 ```bash
