@@ -111,7 +111,7 @@ def roll(s, unit_id, target_id):
     return int(hashlib.sha256(key.encode()).hexdigest()[:8], 16) % 3
 
 
-def advance(original, recorded_decisions=None, provider=None):
+def advance(original, recorded_decisions=None, provider=None, recorded_records=None):
     s = copy.deepcopy(original)
     s['tick'] += 1
     tick = s['tick']
@@ -124,18 +124,31 @@ def advance(original, recorded_decisions=None, provider=None):
         o = observation(s, uid)
         observations[uid] = o
         fallback = None
+        unit_provider = (RuleProvider() if getattr(provider, 'blue_only', False)
+                         and u['side'] != 'blue' else provider)
         try:
-            p = copy.deepcopy(recorded_decisions[uid]) if recorded_decisions is not None else provider.decide(copy.deepcopy(o))
+            p = copy.deepcopy(recorded_decisions[uid]) if recorded_decisions is not None else unit_provider.decide(copy.deepcopy(o))
             if not validate(p, o):
                 raise ValueError('INVALID_DECISION')
-        except Exception:
+        except Exception as exc:
             if recorded_decisions is not None:
                 raise ValueError('INVALID_RECORDED_DECISION')
-            fallback, p = 'PROVIDER_INVALID_OR_FAILED', RuleProvider().decide(o)
+            from .agents import ProviderFailure
+            fallback = exc.code if isinstance(exc, ProviderFailure) else 'PROVIDER_INVALID_OR_FAILED'
+            p = RuleProvider().decide(o)
         proposals[uid] = p
-        decisions.append(dict(id=f'{tick}:{uid}', tick=tick, agent_id=uid,
+        record = dict(id=f'{tick}:{uid}', tick=tick, agent_id=uid,
             observation_hash=digest(o), observation=o, proposal=copy.deepcopy(p),
-            provider='rules-v1', fallback_reason=fallback))
+            provider=getattr(unit_provider, 'name', 'custom'), fallback_reason=fallback)
+        if hasattr(unit_provider, 'metadata'):
+            record['provider_metadata'] = copy.deepcopy(unit_provider.metadata.get(uid, {}))
+        if recorded_records is not None:
+            saved = recorded_records[uid]
+            for field in ('id', 'tick', 'agent_id', 'observation_hash', 'observation', 'proposal'):
+                if saved[field] != record[field]:
+                    raise ValueError('REPLAY_DECISION_MISMATCH')
+            record = copy.deepcopy(saved)
+        decisions.append(record)
     # Stable movement reservations. Every proposal came from the same observation boundary.
     zmap = zones(s)
     moves = {}

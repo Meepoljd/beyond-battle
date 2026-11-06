@@ -4,6 +4,21 @@ let match = null, roster = [], reviewData = null, candidates = null, busy = fals
 const names = {}, zoneNames = {};
 const actionNames = {MOVE:'机动',HOLD:'固守',OBSERVE:'观察',ATTACK:'攻击',SUPPORT:'支援',WITHDRAW:'撤退',REST:'休整'};
 const errors = {MATCH_VERSION_CONFLICT:'对局已更新，已重新加载。请检查最新情报后操作。',TURN_IN_PROGRESS:'上一回合正在结算，请稍后重试。',MATCH_FINISHED:'演习已结束。',INVALID_INPUT:'输入格式不正确，请检查表单。',INVALID_ORDER_EXPIRY:'有效回合必须晚于当前回合。',INVALID_SUPERSEDES:'替换目标必须是同一单位的旧命令。',IDEMPOTENCY_KEY_REUSED:'请求标识与内容不符，请刷新页面。',REVIEW_ALREADY_COMPLETED:'本局经历已确认，可在角色详情中停用。'};
+Object.assign(errors,{OPENCODE_NOT_CONFIGURED:'OpenCode 尚未配置，暂时可选择规则模拟。',MODEL_BUSY:'模型正在处理其他演习，请稍后再推进。'});
+let providerConfig = null;
+async function loadProviders(){
+  providerConfig=await request('/api/providers');
+  const option=$('provider-mode').querySelector('option[value="opencode"]');
+  option.disabled=!providerConfig.opencode.available;
+  option.textContent=option.disabled?'OpenCode · 尚未配置':'OpenCode · 指挥官自主决策';
+  renderProviderChoice();
+}
+function renderProviderChoice(){
+  $('provider-help').textContent=$('provider-mode').value==='opencode'
+    ?`友方指挥官由 OpenCode 决策，模型 ${providerConfig.opencode.model}。每局最多预留 ${providerConfig.opencode.max_calls} 次行动请求，可能产生模型费用；超时、非法提案或额度用尽时按规则继续。`
+    :'规则模式不调用模型。演习伤亡不带入下一局。';
+}
+$('provider-mode').onchange=renderProviderChoice;
 function node(tag, text, cls) { const e=document.createElement(tag); if(text!==undefined)e.textContent=text; if(cls)e.className=cls; return e; }
 function notice(text, retry=false) { const n=$('notice'); n.replaceChildren(node('span',text)); n.hidden=false; if(retry){const b=node('button','重试同一个请求','secondary');b.onclick=()=>run(resumePending);n.append(b);} }
 function show(section){ for(const id of ['prepare','game','review']) $(id).hidden=id!==section; }
@@ -22,7 +37,12 @@ async function completeMutation(p){
   if(p.path==='/api/matches')localStorage.setItem('battle-match',data.id);
   if(data.job_id){
     localStorage.setItem('battle-job',data.job_id);
-    const job=await request('/api/jobs/'+data.job_id);
+    let job=await request('/api/jobs/'+data.job_id);
+    for(let i=0;['pending','running'].includes(job.state)&&i<180;i++){
+      notice('指挥官正在决策，本回合完成后将自动保存。刷新页面会继续查询同一任务。');
+      await new Promise(resolve=>setTimeout(resolve,750));
+      job=await request('/api/jobs/'+data.job_id);
+    }
     if(job.state==='interrupted'||job.state==='failed')notice('上次结算未提交，存档停留在最后完整回合。你可以重新推进。');
     else if(job.state!=='completed')throw new Error('TURN_PENDING');
     localStorage.removeItem('battle-job');
@@ -98,6 +118,10 @@ function refreshOrderChoices(){
 }
 function renderMatch(){
   show('game');for(const z of match.zones)zoneNames[z.id]=z.name;
+  const modelMode=match.provider_mode==='opencode';
+  $('mode-label').textContent=modelMode?'OpenCode · 单位决策':'规则模拟 · 离线演习';
+  $('provider-status').hidden=!modelMode;
+  $('provider-status').textContent=modelMode?`行动请求已预留 ${match.provider_calls_reserved} / ${match.provider_call_limit} 次。${match.provider_fallbacks?`上一回合 ${match.provider_fallbacks} 名指挥官使用规则回退（服务、输出或额度原因），回合已保存。`:'敌方按规则行动；战场结果由模拟内核结算。'}`:'';
   $('tick').textContent=String(match.tick).padStart(2,'0');$('clock').textContent=`/ ${match.max_ticks} 回合 · ${match.tick*match.minutes_per_tick} 分钟`;
   $('radio').textContent='通信：'+match.communication;$('progress').textContent=match.status==='active'?'演习进行中':'演习已结束';
   $('outcome').hidden=match.status==='active';$('outcome').textContent=match.outcome||'';
@@ -139,7 +163,7 @@ async function openReview(){
   if(!candidates.candidates.length)$('memory-candidates').append(node('p','本局没有符合条件的沟通经历。下一场可下达“撤退时先报告”的结构化任务。','fine'));
   $('save-memories').disabled=candidates.reviewed;$('memory-result').textContent=candidates.reviewed?'已经确认，重复操作不会新增经历。':'';window.scrollTo(0,0);
 }
-$('create-form').onsubmit=e=>{e.preventDefault();run(async()=>{const selected=[...document.querySelectorAll('input[name=commander]:checked')].map(e=>e.value);if(!selected.length)throw new Error('请至少选一位指挥官');await mutate('/api/matches',{seed:Number($('seed').value),commander_ids:selected,use_memories:$('use-memories').checked,provider_mode:'rules'});await loadCurrent();window.scrollTo(0,0);});};
+$('create-form').onsubmit=e=>{e.preventDefault();run(async()=>{const selected=[...document.querySelectorAll('input[name=commander]:checked')].map(e=>e.value);if(!selected.length)throw new Error('请至少选一位指挥官');await mutate('/api/matches',{seed:Number($('seed').value),commander_ids:selected,use_memories:$('use-memories').checked,provider_mode:$('provider-mode').value});await loadCurrent();window.scrollTo(0,0);});};
 $('order-form').onsubmit=e=>{e.preventDefault();run(async()=>{await mutate(`/api/matches/${match.id}/orders`,{match_version:match.version,unit_id:$('unit').value,action:$('action').value,target:$('target').value,priority:Number($('priority').value),expires_tick:Number($('expiry').value),retreat_threshold:Number($('threshold').value),silent_until:Number($('silent').value),direct:$('direct').checked,autonomy:$('autonomy').checked,report_before_withdraw:$('report-before').checked,supersedes_id:$('supersedes').value||null,text:$('order-text').value});await refresh();notice('任务已提交，正在传输。收到回执后才能确认执行。');});};
 $('unit').onchange=refreshOrderChoices;
 $('advance').onclick=()=>run(async()=>{await mutate(`/api/matches/${match.id}/advance`,{match_version:match.version});await refresh();});
@@ -149,4 +173,4 @@ $('save-memories').onclick=()=>run(async()=>{const accepted_ids=[...document.que
 $('new-match').onclick=()=>run(async()=>{localStorage.removeItem('battle-match');match=null;candidates=null;await loadRoster();show('prepare');window.scrollTo(0,0);});
 $('back-game').onclick=()=>renderMatch();$('close-dialog').onclick=()=>$('commander-dialog').close();
 window.addEventListener('offline',()=>notice('浏览器已离线。对局不会自动推进，连接恢复后可重试原请求。',!!pending()));
-run(async()=>{await loadRoster();if(pending())await resumePending();else await loadCurrent();});
+run(async()=>{await Promise.all([loadRoster(),loadProviders()]);if(pending())await resumePending();else await loadCurrent();});

@@ -6,6 +6,13 @@ class AgentProvider(Protocol):
     def decide(self, observation: dict) -> dict: ...
 
 
+class ProviderFailure(Exception):
+    """A stable, public-safe failure code; never include remote bodies or secrets."""
+    def __init__(self, code):
+        self.code = code
+        super().__init__(code)
+
+
 def next_hop(start, goal, map_zones):
     graph = {z['id']: z['adjacent'] for z in map_zones}
     queue = [(start, [])]

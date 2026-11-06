@@ -45,8 +45,9 @@ does not authorize implementing them or changing existing save behavior.
 - Rule changes need explicit scenario/ruleset version consideration. Review
   expected behavior before updating a golden fixture; do not merely bless a
   changed test hash.
-- This build is rules-only. Real model providers, credentials and paid calls
-  require the user's supplier and budget decision. Do not borrow project keys.
+- Rules mode is the default. OpenCode is opt-in and requires the operator to
+  configure a model and per-match call limit; provider charges must be bounded
+  separately. Do not borrow unrelated project keys. See docs/OPENCODE.md.
 - NUC deployment and public exposure are separate from cloud development.
 
 ## Reusable cloud setup

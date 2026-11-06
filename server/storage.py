@@ -9,6 +9,7 @@ from pathlib import Path
 from .domain import SCENARIO, canonical, digest, initial, replay, state_delta
 from .simulation import advance, event, submit_order
 from .replay import verify_simulation
+from .opencode import OpenCodeProvider, OpenCodeSettings
 
 
 class DomainError(Exception):
@@ -21,8 +22,9 @@ def now():
 
 
 class Store:
-    def __init__(self, path):
+    def __init__(self, path, opencode_settings=None):
         self.path = str(path)
+        self.opencode = opencode_settings or OpenCodeSettings()
         Path(path).parent.mkdir(parents=True, exist_ok=True)
         with self.connection() as db:
             if db.execute("SELECT 1 FROM sqlite_master WHERE type='table' AND name='schema_version'").fetchone():
@@ -52,6 +54,8 @@ class Store:
                 source_match_id TEXT, payload_json TEXT, active INTEGER NOT NULL DEFAULT 1);
               CREATE TABLE IF NOT EXISTS exercise_reviews(match_id TEXT PRIMARY KEY,
                 accepted_json TEXT, created_at TEXT);
+              CREATE TABLE IF NOT EXISTS provider_reservations(job_id TEXT PRIMARY KEY,
+                match_id TEXT NOT NULL, unit_ids_json TEXT NOT NULL, created_at TEXT NOT NULL);
             ''')
 
     @contextmanager
@@ -126,6 +130,10 @@ class Store:
                 return cached
             memories = self.list_memories(db, active_only=True) if payload['use_memories'] else []
             state = initial(payload['seed'], payload['commander_ids'], memories)
+            if payload.get('provider_mode', 'rules') == 'opencode':
+                if not self.opencode.enabled:
+                    raise DomainError('OPENCODE_NOT_CONFIGURED', 503)
+                state['provider_config'] = self.opencode.profile()
             mid = uuid.uuid4().hex
             db.execute('INSERT INTO matches VALUES(?,?,?,?)', (mid, 0, '{}', now()))
             self.append(db, mid, {}, state, 0, [event('MATCH_CREATED', 0, 'HQ', {'seed': payload['seed'], 'scenario_version': SCENARIO['version']})])
@@ -167,6 +175,15 @@ class Store:
             self.guard(db, mid, state, version, payload['match_version'])
             jid = uuid.uuid4().hex
             db.execute('INSERT INTO turn_jobs VALUES(?,?,?,?,?,?,?)', (jid, mid, version, 'running', None, now(), now()))
+            if state.get('provider_config', {}).get('mode') == 'opencode':
+                used = sum(len(json.loads(r[0])) for r in db.execute(
+                    'SELECT unit_ids_json FROM provider_reservations WHERE match_id=?', (mid,)))
+                limit = min(state['provider_config']['max_calls'], self.opencode.max_calls)
+                units = sorted(u['id'] for u in state['units'].values()
+                               if u['side'] == 'blue' and u['personnel'] > 0)
+                reserved = units[:max(0, limit-used)] if self.opencode.enabled else []
+                db.execute('INSERT INTO provider_reservations VALUES(?,?,?,?)',
+                           (jid, mid, canonical(reserved), now()))
             result = {'job_id': jid}
             self.remember(db, scope, key, payload, result)
             return result, state
@@ -188,15 +205,31 @@ class Store:
         result, before = self.start_turn(mid, payload, key)
         if before is None:
             return result
+        self.run_turn(mid, result['job_id'], before)
+        return result
+
+    def run_turn(self, mid, jid, before):
         try:
             # Provider boundary intentionally outside any SQLite transaction.
-            after, events, decisions = advance(before)
-            self.finish_turn(mid, result['job_id'], before, after, events, decisions)
+            provider = None
+            if before.get('provider_config', {}).get('mode') == 'opencode':
+                with self.connection() as db:
+                    row = db.execute('SELECT unit_ids_json FROM provider_reservations WHERE job_id=?', (jid,)).fetchone()
+                personas = {c['id']: {k: c[k] for k in ('name', 'role', 'trait')}
+                            for c in before['scenario']['commanders']}
+                provider = OpenCodeProvider(self.opencode, before['provider_config'],
+                                            json.loads(row[0]) if row else [], personas)
+            after, events, decisions = advance(before, provider=provider)
+            self.finish_turn(mid, jid, before, after, events, decisions)
         except Exception:
             with self.transaction() as db:
-                db.execute("UPDATE turn_jobs SET state='failed',error_code='TURN_FAILED',updated_at=? WHERE id=? AND state='running'", (now(), result['job_id']))
+                db.execute("UPDATE turn_jobs SET state='failed',error_code='TURN_FAILED',updated_at=? WHERE id=? AND state='running'", (now(), jid))
             raise
-        return result
+
+    def provider_usage(self, mid):
+        with self.connection() as db:
+            return sum(len(json.loads(r[0])) for r in db.execute(
+                'SELECT unit_ids_json FROM provider_reservations WHERE match_id=?', (mid,)))
 
     def job(self, jid):
         with self.connection() as db:

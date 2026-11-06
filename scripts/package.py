@@ -8,7 +8,7 @@ ROOT=Path(__file__).resolve().parents[1]
 
 
 def package():
-    directories=['server','web','scenarios','tests','contracts','scripts','docs']
+    directories=['server','web','scenarios','tests','contracts','scripts','docs','config']
     files=[ROOT/p for p in ['README.md','AGENTS.md','.gitignore','.env.example','requirements.lock','requirements-dev.lock','data/.gitkeep']]
     for directory in directories:
         files.extend(p for p in (ROOT/directory).rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.suffix not in ('.pyc','.sqlite3'))

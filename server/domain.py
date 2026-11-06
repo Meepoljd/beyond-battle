@@ -73,7 +73,9 @@ def player_view(s, match_id, version):
                '延迟' if tick in cfg['communication']['delayed_ticks'] else '正常')
     # Explicit allowlist: no raw truth, unsent reports, observations, or enemy policy.
     return dict(id=match_id, version=version, seed=s['seed'], tick=tick, status=s['status'],
-        outcome=s['outcome'], provider_mode='rules', max_ticks=cfg['max_ticks'],
+        outcome=s['outcome'], provider_mode=s.get('provider_config', {}).get('mode', 'rules'),
+        provider_fallbacks=sum(bool(d['fallback_reason']) for d in s['last_decisions']
+            if d['agent_id'].startswith('blue-')), max_ticks=cfg['max_ticks'],
         minutes_per_tick=cfg['minutes_per_tick'], communication=channel,
         zones=copy.deepcopy(cfg['zones']), bridge=cfg['bridge'],
         known_units=copy.deepcopy(list(s['known'].values())),
